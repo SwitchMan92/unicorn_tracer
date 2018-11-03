@@ -114,7 +114,31 @@ class MemoryRegionTracer:
 
             print()
             print()
-
+            
+    def print_differences_light(self, memory_image1, memory_image2):
+        diff = self.get_differences(memory_image1, memory_image2)
+        
+        if len(diff.keys()) > 0:
+            
+            current_key_index = 0
+            current_key = diff.keys()[current_key_index]
+            
+            while current_key_index < diff.keys()[-1]:
+                current_offset = current_key - (current_key % 16)
+                
+                print(colored(hex(self.__region_address + current_offset) + "\t", "blue"), end="")
+                
+                for i in range(current_offset, current_offset + 16):
+                    
+                    if i in diff.keys():
+                        print(colored(self.format_char(diff[i]), "yellow"), end=" ")
+                        current_key_index = i
+                    else:
+                        print(self.format_char(memory_image1.get_memory_image()[i]), end=" ")
+                
+                print()
+            
+            print()
 
 class TracedUc(Uc):
 
@@ -129,7 +153,7 @@ class TracedUc(Uc):
                     mem_image = mem_mapping.add_image(address, data)
 
                     if CONFIG.DEBUG:
-                        mem_mapping.print_differences(last_image, mem_image)
+                        mem_mapping.print_differences_light(last_image, mem_image)
             except:
                 mem_mapping.add_image(address, data)
 
