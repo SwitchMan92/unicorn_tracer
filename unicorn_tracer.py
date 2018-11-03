@@ -5,16 +5,18 @@ from unicorn.unicorn import Uc
 from unicorn.unicorn_const import UC_PROT_ALL, UC_HOOK_CODE
 from config import CONFIG
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
+class InvalidSectionSizeException(Exception):
+    def __init__(self, memory_region_tracer):
+            message = "MemoryImage starting at address {} should have a size of {}".format(
+                hex(memory_region_tracer.get_region_address()), hex(memory_region_tracer.get_region_size()))
+            Exception.__init__(message=message)
+
+class InvalidMemoryInstanceException(Exception):
+    def __init__(self, memory_region_tracer, code_address):
+        message = Exception("No memoryImage instance found at code address {} for memory address {}".format(
+                hex(code_address), hex(memory_region_tracer.get_region_address())))
+        Exception.__init__(message=message)
 
 class MemoryRegionImage:
     def __init__(self, code_address, memory_image):
@@ -49,15 +51,13 @@ class MemoryRegionTracer:
 
     def add_image(self, code_address, memory_image):
         if len(memory_image) != self.get_region_size():
-            raise Exception("MemoryImage starting at address {} should have a size of {}".format(
-                hex(self.__region_address), hex(self.__region_size)))
+            raise InvalidSectionSizeException(self)
         self.__memory_images.append(MemoryRegionImage(code_address, memory_image))
         return self.__memory_images[-1]
 
     def remove_image(self, code_address):
         if code_address not in self.__memory_images.keys():
-            raise Exception("No memoryImage instance found at code address {} for memory address {}".format(
-                hex(code_address), hex(self.__region_address)))
+            raise InvalidMemoryInstanceException(self, code_address) 
         self.__memory_images.remove(code_address)
 
     def get_images(self):
@@ -73,8 +73,7 @@ class MemoryRegionTracer:
         for image in self.__memory_images:
             if image.code_address == code_address:
                 return image
-        raise Exception("No MemoryImage instance found at code address {} for memory address {}".format(
-            hex(code_address), hex(self.__region_address)))
+        raise InvalidMemoryInstanceException(self, code_address) 
 
     def get_differences(self, memory_image1, memory_image2):
 
@@ -135,9 +134,7 @@ class MemoryRegionTracer:
                         current_key_index = i
                     else:
                         print(self.format_char(memory_image1.get_memory_image()[i]), end=" ")
-                
                 print()
-            
             print()
 
 class TracedUc(Uc):
@@ -151,9 +148,8 @@ class TracedUc(Uc):
 
                 if data != last_image.get_memory_image:
                     mem_image = mem_mapping.add_image(address, data)
-
-                    if CONFIG.DEBUG:
-                        mem_mapping.print_differences_light(last_image, mem_image)
+                    mem_mapping.print_differences_light(last_image, mem_image)
+                    
             except:
                 mem_mapping.add_image(address, data)
 
