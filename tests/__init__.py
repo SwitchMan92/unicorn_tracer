@@ -66,8 +66,6 @@ def read(name):
         return f.read()
 
 
-
-
 class UnicornTracerTest(unittest.TestCase):
 
     @classmethod
@@ -77,11 +75,11 @@ class UnicornTracerTest(unittest.TestCase):
     def test_basic(self):
         self.mu.mem_map(0x8048000, 0x1000)
         self.mu.mem_map(0xf7ff9000, 0x3000)
-        self.mu.mem_map(0x8049000, 0x1000)
+        self.mu.mem_map(0x8049000, 0x1000, trace=True)
         self.mu.mem_map(0xf7ffc000, 0x2000)
         self.mu.mem_map(0xfffdd000, 0x21000)
 
-        self.mu.mem_write(BASE_ADDR, read("tests/ch20.bin"))
+        self.mu.mem_write(BASE_ADDR, read("e:/workspaces/python/unicorn_tracer/tests/ch20.bin"))
         self.mu.reg_write(UC_X86_REG_ESP, 0xfffdd000 + 0x21000 - 1)
 
         self.mu.hook_add(UC_HOOK_INTR, hook_intr)

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from termcolor import colored
 from unicorn.unicorn import Uc
 from unicorn.unicorn_const import UC_PROT_ALL, UC_HOOK_CODE
 from config import CONFIG
@@ -33,7 +34,13 @@ class MemoryRegionTracer:
         self.__region_address = address
         self.__region_size = size
         self.__memory_images = list()
-
+    
+    def format_char(self, value):
+        if value < 0xA:
+            return "0" + "{:x}".format(value)
+        else:
+            return "{:2x}".format(value)
+    
     def get_region_address(self):
         return self.__region_address
 
@@ -77,8 +84,8 @@ class MemoryRegionTracer:
             return results
 
         for i in range(0, self.__region_size):
-            byte1 = memory_image1[i]
-            byte2 = memory_image2[i]
+            byte1 = memory_image1.get_memory_image()[i]
+            byte2 = memory_image2.get_memory_image()[i]
 
             if byte1 != byte2:
                 results[i] = byte2
@@ -88,20 +95,25 @@ class MemoryRegionTracer:
     def print_differences(self, memory_image1, memory_image2):
         diff = self.get_differences(memory_image1, memory_image2)
 
-        for i in range(0, self.__region_size):
+        if len(diff.keys()) > 0:
 
-            if i % 8:
-                print("\t", end="")
+            for i in range(0, self.__region_size):
 
-            if i % 16:
-                print("{}{}:".format(bcolors.UNDERLINE, hex(self.__region_address + i)), end="")
+                if (i % 8) == 0:
+                    print("\t", end="")
 
-            if i in diff.keys():
-                diff_value = diff[i]
-                print("{}{}".format(bcolors.WARNING, hex(diff_value)), end=" ")
+                if (i % 16) == 0:
+                    print()
+                    print(colored(hex(self.__region_address + i) + "\t", "blue"), end="")
 
-            else:
-                print("{}{}".format(bcolors.ENDC, hex(memory_image1[i])), end=" ")
+                if i in diff.keys():
+                    diff_value = diff[i]
+                    print(colored(self.format_char(diff_value), "yellow"), end=" ")
+                else:
+                    print(self.format_char(memory_image1.get_memory_image()[i]), end=" ")
+
+            print()
+            print()
 
 
 class TracedUc(Uc):
@@ -113,17 +125,17 @@ class TracedUc(Uc):
             try:
                 last_image = mem_mapping.get_last_image()
 
-                if data != last_image:
+                if data != last_image.get_memory_image:
                     mem_image = mem_mapping.add_image(address, data)
 
                     if CONFIG.DEBUG:
-                        mem_mapping.print_differences(mem_mapping.get[-2], mem_image)
+                        mem_mapping.print_differences(last_image, mem_image)
             except:
                 mem_mapping.add_image(address, data)
 
-
-    def mem_map(self, address, size, perms=UC_PROT_ALL):
-        self.__memory_mappings.append(MemoryRegionTracer(address, size))
+    def mem_map(self, address, size, perms=UC_PROT_ALL, trace=False):
+        if trace:
+            self.__memory_mappings.append(MemoryRegionTracer(address, size))
         Uc.mem_map(self, address, size, perms)
 
     def __init__(self, *args, **kwargs):
