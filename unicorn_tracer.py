@@ -1,9 +1,10 @@
 from __future__ import print_function
 
-from termcolor import colored
+import sys
 from unicorn.unicorn import Uc
 from unicorn.unicorn_const import UC_PROT_ALL, UC_HOOK_CODE
 from config import CONFIG
+from terminal import UnicornTracerTerminal
 
 
 class InvalidSectionSizeException(Exception):
@@ -32,16 +33,31 @@ class MemoryRegionImage:
 
 class MemoryRegionTracer:
 
-    def __init__(self, address, size):
+    def __init__(self, address, size, continous_tracing=False):
         self.__region_address = address
         self.__region_size = size
+        self.__continuous_tracing = continous_tracing
         self.__memory_images = list()
+        self.__code_checkpoints = list()
+        
+    def is_continously_tracing(self):
+        return self.__continuous_tracing
     
-    def format_char(self, value):
-        if value < 0xA:
-            return "0" + "{:x}".format(value)
-        else:
-            return "{:2x}".format(value)
+    def add_code_checkpoint(self, code_address):
+        if code_address not in self.__code_checkpoints:
+            self.__code_checkpoints.append(code_address)
+            
+            if self.__continuous_tracing:
+                self.__continuous_tracing = False
+            
+    def remove_code_checkpoint(self, code_address):
+        self.__code_checkpoints.remove(code_address)
+    
+    def get_code_checkpoints(self):
+        return self.__code_checkpoints
+    
+    def is_code_checkpoint_defined(self, code_address):
+        return code_address in self.__code_checkpoints
     
     def get_region_address(self):
         return self.__region_address
@@ -91,75 +107,42 @@ class MemoryRegionTracer:
 
         return results
 
-    def print_differences(self, memory_image1, memory_image2):
-        diff = self.get_differences(memory_image1, memory_image2)
-
-        if len(diff.keys()) > 0:
-
-            for i in range(0, self.__region_size):
-
-                if (i % 8) == 0:
-                    print("\t", end="")
-
-                if (i % 16) == 0:
-                    print()
-                    print(colored(hex(self.__region_address + i) + "\t", "blue"), end="")
-
-                if i in diff.keys():
-                    diff_value = diff[i]
-                    print(colored(self.format_char(diff_value), "yellow"), end=" ")
-                else:
-                    print(self.format_char(memory_image1.get_memory_image()[i]), end=" ")
-
-            print()
-            print()
-            
-    def print_differences_light(self, memory_image1, memory_image2):
-        diff = self.get_differences(memory_image1, memory_image2)
-        
-        if len(diff.keys()) > 0:
-            
-            current_key_index = 0
-            current_key = diff.keys()[current_key_index]
-            
-            while current_key_index < diff.keys()[-1]:
-                current_offset = current_key - (current_key % 16)
-                
-                print(colored(hex(self.__region_address + current_offset) + "\t", "blue"), end="")
-                
-                for i in range(current_offset, current_offset + 16):
-                    
-                    if i in diff.keys():
-                        print(colored(self.format_char(diff[i]), "yellow"), end=" ")
-                        current_key_index = i
-                    else:
-                        print(self.format_char(memory_image1.get_memory_image()[i]), end=" ")
-                print()
-            print()
 
 class TracedUc(Uc):
 
     def hook_code(self, uc, address, size, user_data):
-        for mem_mapping in self.__memory_mappings:
-            data = uc.mem_read(mem_mapping.get_region_address(), mem_mapping.get_region_size())
-
+        for mem_mapping in self.__memory_mappings:    
             try:
-                last_image = mem_mapping.get_last_image()
+                if len(mem_mapping.get_images()) == 0 or mem_mapping.is_continously_tracing() or mem_mapping.is_code_checkpoint_defined(address):
+                    data = uc.mem_read(mem_mapping.get_region_address(), mem_mapping.get_region_size())
+                
+                    if len(mem_mapping.get_images()) == 0:
+                        mem_mapping.add_image(address, data)
+                        
+                    elif mem_mapping.is_continously_tracing() or mem_mapping.is_code_checkpoint_defined(address):    
+                       
+                        last_image = mem_mapping.get_last_image()
+        
+                        if data != last_image.get_memory_image:
+                            mem_image = mem_mapping.add_image(address, data)
+                            self.__terminal.print_differences_light(mem_mapping, last_image, mem_image)
+                            
+            except Exception as e:
+                print(e, file=sys.stderr)
 
-                if data != last_image.get_memory_image:
-                    mem_image = mem_mapping.add_image(address, data)
-                    mem_mapping.print_differences_light(last_image, mem_image)
-                    
-            except:
-                mem_mapping.add_image(address, data)
-
-    def mem_map(self, address, size, perms=UC_PROT_ALL, trace=False):
-        if trace:
-            self.__memory_mappings.append(MemoryRegionTracer(address, size))
+    def mem_map(self, address, size, perms=UC_PROT_ALL, trace=False, continuous_tracing=False):
         Uc.mem_map(self, address, size, perms)
+        if trace:
+            memory_region = MemoryRegionTracer(address, size, continous_tracing=continuous_tracing)
+            self.__memory_mappings.append(memory_region)
+            return memory_region
+        return None
+
 
     def __init__(self, *args, **kwargs):
-        Uc.__init__(self, *args, **kwargs)
         self.__memory_mappings = list()
+        self.__terminal = UnicornTracerTerminal()
+        
+        Uc.__init__(self, *args, **kwargs)
         self.hook_add(UC_HOOK_CODE, self.hook_code)
-
+        
