@@ -32,11 +32,8 @@ class UnicornTracerTerminal():
         return self.__logger
     
     def format_char(self, value):
-        if value < 0xA:
-            return "0" + "{:x}".format(value)
-        else:
-            return "{:2x}".format(value)
-    
+        return "{:02X}".format(value)
+        
     def print_differences(self, memory_mapping, memory_image1, memory_image2):
         diff = memory_mapping.get_differences(memory_image1, memory_image2)
         
