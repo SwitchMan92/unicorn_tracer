@@ -41,7 +41,7 @@ class UnicornTracerTerminal():
         
         if len(diff.keys()) > 0:
 
-            for i in range(0, self.__region_size):
+            for i in range(0, memory_mapping.get_region_size()):
 
                 if (i % 8) == 0:
                     logger_output += "\t"
@@ -64,9 +64,7 @@ class UnicornTracerTerminal():
         
         logger_output = ""
         
-        
         current_key_index = 0
-        
         
         while len(diff.keys()) > current_key_index:
             current_key = diff.keys()[current_key_index]

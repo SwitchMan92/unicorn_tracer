@@ -110,7 +110,13 @@ class MemoryRegionTracer:
 
 
 class TracedUc(Uc):
-
+    
+    def get_terminal(self):
+        return self.__terminal
+    
+    def add_changes_handler(self, function):
+        self.on_changes_detected = function
+    
     def hook_code(self, uc, address, size, user_data):
         for mem_mapping in self.__memory_mappings:    
             try:
@@ -125,7 +131,11 @@ class TracedUc(Uc):
         
                         if data != last_image.get_memory_image():
                             mem_image = mem_mapping.add_image(address, data)
-                            self.__terminal.print_differences_light(mem_mapping, last_image, mem_image)
+                            
+                            if not self.on_changes_detected:
+                                raise Exception("Please add a changes_detected handler")
+                                
+                            self.on_changes_detected(self, mem_mapping, last_image, mem_image)
                             
             except Exception as e:
                 self.__terminal.get_logger().log(logging.ERROR, traceback.format_exc(e))

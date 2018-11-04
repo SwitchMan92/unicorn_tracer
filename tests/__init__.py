@@ -65,11 +65,15 @@ def read(name):
     with open(name, "rb") as f:
         return f.read()
 
+def on_changes_detected(uc, memory_mapping, memory_image1, memory_image2):
+    uc.get_terminal().print_differences_light(memory_mapping, memory_image1, memory_image2)
 
 class UnicornTracerTest(unittest.TestCase):
-
+    
     def setUp(self):
         self.mu = TracedUc(UC_ARCH_X86, UC_MODE_32)
+        self.mu.add_changes_handler(on_changes_detected)
+        
         self.mu.reg_write(UC_X86_REG_ESP, 0xfffdd000 + 0x21000 - 1)
         self.mu.hook_add(UC_HOOK_INTR, hook_intr)
         
