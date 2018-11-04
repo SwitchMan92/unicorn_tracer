@@ -33,7 +33,7 @@ class UnicornTracerTerminal():
     
     def format_char(self, value):
         return "{:02X}".format(value)
-        
+     
     def print_differences(self, memory_mapping, memory_image1, memory_image2):
         diff = memory_mapping.get_differences(memory_image1, memory_image2)
         
@@ -64,27 +64,41 @@ class UnicornTracerTerminal():
         
         logger_output = ""
         
-        if len(diff.keys()) > 0:
-            
-            current_key_index = 0
+        
+        current_key_index = 0
+        
+        
+        while len(diff.keys()) > current_key_index:
             current_key = diff.keys()[current_key_index]
+            current_offset = current_key - (current_key % 16)
             
-            while current_key_index < diff.keys()[-1]:
-                current_offset = current_key - (current_key % 16)
+            current_rest = (memory_mapping.get_region_size() - current_offset)
+            current_rest = 16 if current_rest > 16 else current_rest
+            
+            logger_output += colored(hex(memory_mapping.get_region_address() + current_offset) + "\t", "blue")
+            
+            for i in range(current_offset, current_offset + current_rest):
                 
-                logger_output += colored(hex(memory_mapping.get_region_address() + current_offset) + "\t", "blue")
+                if (i % 8) == 0:
+                    logger_output += "\t"
                 
-                for i in range(current_offset, current_offset + 16):
-                    
-                    if i in diff.keys():
-                        logger_output += colored(self.format_char(diff[i]), "yellow") + " "
-                        current_key_index = i
-                    else:
+                if i in diff.keys():
+                    logger_output += colored(self.format_char(diff[i]), "yellow") + " "
+                    current_key_index = diff.keys().index(i)
+                else:
+                    try:
                         logger_output += colored(self.format_char(memory_image1.get_memory_image()[i]) + " ", "grey")
-                        
-                logger_output += colored("\t at code address {}".format(hex(memory_image2.get_code_address())) + "\n", "grey")
-                
-            logger_output += "\n"
+                    except:
+                        break
+            
+            if len(diff.keys()) > (current_key_index+1):
+                current_key_index += 1
+           
+            logger_output += colored("\t at code address {}".format(hex(memory_image2.get_code_address())) + "\n", "grey")
+        
+            current_key_index += 1
+        
+        logger_output += "\n"
         
         self.__logger.log(logging.INFO, logger_output)
         

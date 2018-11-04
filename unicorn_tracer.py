@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import sys
+import logging
+import traceback
 from unicorn.unicorn import Uc
 from unicorn.unicorn_const import UC_PROT_ALL, UC_HOOK_CODE
 from config import CONFIG
@@ -120,15 +121,14 @@ class TracedUc(Uc):
                         mem_mapping.add_image(address, data)
                         
                     elif mem_mapping.is_continously_tracing() or mem_mapping.is_code_checkpoint_defined(address):    
-                       
                         last_image = mem_mapping.get_last_image()
         
-                        if data != last_image.get_memory_image:
+                        if data != last_image.get_memory_image():
                             mem_image = mem_mapping.add_image(address, data)
                             self.__terminal.print_differences_light(mem_mapping, last_image, mem_image)
                             
             except Exception as e:
-                print(e, file=sys.stderr)
+                self.__terminal.get_logger().log(logging.ERROR, traceback.format_exc(e))
 
     def mem_map(self, address, size, perms=UC_PROT_ALL, trace=False, continuous_tracing=False):
         Uc.mem_map(self, address, size, perms)

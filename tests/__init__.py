@@ -38,7 +38,7 @@ def hook_intr(uc, intno, user_data):
         buf = ecx
         count = edx
 
-        dummy_content = str("a")
+        dummy_content = str("aaaaaaaaaa")
         if len(dummy_content) > count:
             dummy_content = dummy_content[:count]
 
@@ -68,21 +68,18 @@ def read(name):
 
 class UnicornTracerTest(unittest.TestCase):
 
-    @classmethod
     def setUp(self):
         self.mu = TracedUc(UC_ARCH_X86, UC_MODE_32)
         self.mu.reg_write(UC_X86_REG_ESP, 0xfffdd000 + 0x21000 - 1)
-        
         self.mu.hook_add(UC_HOOK_INTR, hook_intr)
         
     def test_basic(self):
-        
-        self.mu.mem_map(0x8048000, 0x1000)
+        self.mu.mem_map(0x8048000, 0x1000, trace=True, continuous_tracing=True)
+        self.mu.mem_map(0x8049000, 0x1000, trace=True, continuous_tracing=True)
         self.mu.mem_map(0xf7ff9000, 0x3000)
-        self.mu.mem_map(0x8049000, 0x1000)
         self.mu.mem_map(0xf7ffc000, 0x2000)
-        mem_region = self.mu.mem_map(0xfffdd000, 0x21000, trace=True, continuous_tracing=False)
-        mem_region.add_code_checkpoint(0x8048115)
+        self.mu.mem_map(0xfffdd000, 0x21000) #mem_region = 
+        #mem_region.add_code_checkpoint(0x8048115)
         
         self.mu.mem_write(BASE_ADDR, read("e:/workspaces/python/unicorn_tracer/tests/ch20.bin"))
         self.mu.emu_start(TEXT_ADDR, TEXT_ADDR + 0x1000)
