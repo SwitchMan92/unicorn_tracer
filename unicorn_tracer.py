@@ -4,7 +4,6 @@ import logging
 import traceback
 from unicorn.unicorn import Uc
 from unicorn.unicorn_const import UC_PROT_ALL, UC_HOOK_CODE
-from config import CONFIG
 from terminal import UnicornTracerTerminal
 
 
@@ -14,11 +13,13 @@ class InvalidSectionSizeException(Exception):
                 hex(memory_region_tracer.get_region_address()), hex(memory_region_tracer.get_region_size()))
             Exception.__init__(message=message)
 
+
 class InvalidMemoryInstanceException(Exception):
     def __init__(self, memory_region_tracer, code_address):
         message = Exception("No memoryImage instance found at code address {} for memory address {}".format(
                 hex(code_address), hex(memory_region_tracer.get_region_address())))
         Exception.__init__(message=message)
+
 
 class MemoryRegionImage:
     def __init__(self, code_address, memory_image):
@@ -41,7 +42,7 @@ class MemoryRegionTracer:
         self.__memory_images = list()
         self.__code_checkpoints = list()
         
-    def is_continously_tracing(self):
+    def is_continuously_tracing(self):
         return self.__continuous_tracing
     
     def add_code_checkpoint(self, code_address):
@@ -115,27 +116,29 @@ class TracedUc(Uc):
         return self.__terminal
     
     def add_changes_handler(self, function):
-        self.on_changes_detected = function
+        self.__on_changes_detected = function
     
     def hook_code(self, uc, address, size, user_data):
         for mem_mapping in self.__memory_mappings:    
             try:
-                if len(mem_mapping.get_images()) == 0 or mem_mapping.is_continously_tracing() or mem_mapping.is_code_checkpoint_defined(address):
+                if len(mem_mapping.get_images()) == 0 or mem_mapping.is_continuously_tracing() or \
+                        mem_mapping.is_code_checkpoint_defined(address):
+
                     data = uc.mem_read(mem_mapping.get_region_address(), mem_mapping.get_region_size())
                 
                     if len(mem_mapping.get_images()) == 0:
                         mem_mapping.add_image(address, data)
                         
-                    elif mem_mapping.is_continously_tracing() or mem_mapping.is_code_checkpoint_defined(address):    
+                    elif mem_mapping.is_continuously_tracing() or mem_mapping.is_code_checkpoint_defined(address):
                         last_image = mem_mapping.get_last_image()
         
                         if data != last_image.get_memory_image():
                             mem_image = mem_mapping.add_image(address, data)
                             
-                            if not self.on_changes_detected:
+                            if not self.__on_changes_detected:
                                 raise Exception("Please add a changes_detected handler")
                                 
-                            self.on_changes_detected(self, mem_mapping, last_image, mem_image)
+                            self.__on_changes_detected(self, mem_mapping, last_image, mem_image)
                             
             except Exception as e:
                 self.__terminal.get_logger().log(logging.ERROR, traceback.format_exc(e))
@@ -148,11 +151,10 @@ class TracedUc(Uc):
             return memory_region
         return None
 
-
     def __init__(self, *args, **kwargs):
         self.__memory_mappings = list()
         self.__terminal = UnicornTracerTerminal()
-        
+        self.__on_changes_detected = None
+
         Uc.__init__(self, *args, **kwargs)
         self.hook_add(UC_HOOK_CODE, self.hook_code)
-        
