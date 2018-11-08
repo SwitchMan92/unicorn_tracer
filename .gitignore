@@ -1,2 +1,6 @@
+.project
+.pydevproject
+pycache/
 .idea/
 venv/
+*.pyc
