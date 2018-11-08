@@ -22,10 +22,25 @@ can also be retrieved by calling tracedUc.get_memory_regions() or TracedUc.get_m
 
 Examples:
 ```python
-mu = TracedUc(UC_ARCH_X86, UC_MODE_32)
-mem_region = mu.mem_map(0x8049000, 0x1000, trace=True, continuous_tracing=False)
-mem_region.add_code_checkpoint(0x8048080) '''will check diffs in this memory segment just before the instruction at address
-0x8048080 is executed.'''
+from unicorn_tracer import TracedUc
+
+
+def on_changes_detected(uc, code_address, memory_mapping, memory_image1, memory_image2):
+    print("At code addesss {}".format(hex(code_address)))
+    diffs = memory_mapping.get_differences(memory_image1, memory_image2) '''returns memory diffs between the 
+                                                                            two memory images'''
+    uc.get_terminal().print_differences_light(memory_mapping, memory_image1, memory_image2) '''a litle class that
+                                                                                                eases diffs printing'''
+    
+
+if __name__=="__main__":
+    
+    mu = TracedUc(UC_ARCH_X86, UC_MODE_32)
+    mu.add_changes_handler(on_changes_detected)
+    
+    mem_region = mu.mem_map(0x8049000, 0x1000, trace=True, continuous_tracing=False)
+    mem_region.add_code_checkpoint(0x8048080) '''will check diffs in this memory segment just before the 
+    instruction at address 0x8048080 is executed.'''
 ```
 
 For more examples, you can take a look at the files into the tests/ directory.
