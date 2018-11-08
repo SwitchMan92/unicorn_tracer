@@ -138,7 +138,7 @@ class TracedUc(Uc):
                             if not self.__on_changes_detected:
                                 raise Exception("Please add a changes_detected handler")
                                 
-                            self.__on_changes_detected(self, mem_mapping, last_image, mem_image)
+                            self.__on_changes_detected(self, address, mem_mapping, last_image, mem_image)
                             
             except Exception as e:
                 self.__terminal.get_logger().log(logging.ERROR, traceback.format_exc(e))
@@ -150,6 +150,18 @@ class TracedUc(Uc):
             self.__memory_mappings.append(memory_region)
             return memory_region
         return None
+
+    def get_memory_regions(self):
+        return self.__memory_mappings
+
+    def get_memory_region(self, memory_address):
+        results = list()
+
+        for memory_region in self.__memory_mappings:
+            if memory_region.get_region_address() == memory_address:
+                results.append(memory_region)
+
+        return results
 
     def __init__(self, *args, **kwargs):
         self.__memory_mappings = list()

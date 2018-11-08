@@ -1,7 +1,5 @@
 import unittest
-import lief
 import os
-
 
 from unicorn.unicorn_const import UC_ARCH_X86, UC_MODE_32, UC_HOOK_INTR, UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, \
@@ -69,7 +67,8 @@ def read(name):
         return f.read()
 
 
-def on_changes_detected(uc, memory_mapping, memory_image1, memory_image2):
+def on_changes_detected(uc, code_address, memory_mapping, memory_image1, memory_image2):
+    print("At code addesss {}".format(hex(code_address)))
     uc.get_terminal().print_differences_light(memory_mapping, memory_image1, memory_image2)
 
 
@@ -81,7 +80,7 @@ def hook_code(uc, address, size, user_data):
 class UnicornTracerTest(unittest.TestCase):
     
     def setUp(self):
-        binary_path = os.path.join(os.getcwd(), "tests", "ch20.bin")
+        binary_path = os.path.join(os.getcwd(), "unicorn_tracer", "tests", "ch20.bin")
 
         self.mu = TracedUc(UC_ARCH_X86, UC_MODE_32)
         self.mu.add_changes_handler(on_changes_detected)
