@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+import setuptools
 
-setup(name='unicorn_tracer',
-      version='1.0',
-      description='memory modifications tracing tool for the unicorn cpu emulator',
-      author='Tom Langfeldt',
-      url='https://github.com/SwitchMan92/unicorn_tracer',
-      packages=["unicorn_tracer"]
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+                name='unicorn_tracer',
+                version='1.0',
+                description='memory modifications tracing tool for the unicorn cpu emulator',
+                author='Tom Langfeldt',
+                url='https://github.com/SwitchMan92/unicorn_tracer',
+                packages=setuptools.find_packages(),
+                classifiers=[
+                    "Programming Language :: Python :: 2.7",
+                    "License :: OSI Approved :: GNU General Public License (GPL)",
+                    "Operating System :: OS Independent",
+                  ]
       )
