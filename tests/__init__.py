@@ -1,8 +1,11 @@
 import unittest
+import lief
+import os
 
-from unicorn.unicorn_const import UC_ARCH_X86, UC_MODE_32, UC_HOOK_INTR
+
+from unicorn.unicorn_const import UC_ARCH_X86, UC_MODE_32, UC_HOOK_INTR, UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, \
-UC_X86_REG_EDX, UC_X86_REG_EIP
+    UC_X86_REG_EDX, UC_X86_REG_EIP
 from unicorn_tracer import TracedUc
 
 BASE_ADDR=0x8048000
@@ -13,9 +16,9 @@ STACK_ADDR = 0xfffdd000
 STACK_SIZE = 0x21000
 
 
-
 # callback for tracing Linux interrupt
 def hook_intr(uc, intno, user_data):
+
     global id_gen
 
     # only handle Linux syscall
@@ -65,28 +68,38 @@ def read(name):
     with open(name, "rb") as f:
         return f.read()
 
+
 def on_changes_detected(uc, memory_mapping, memory_image1, memory_image2):
     uc.get_terminal().print_differences_light(memory_mapping, memory_image1, memory_image2)
+
+
+def hook_code(uc, address, size, user_data):
+    byte_value = uc.mem_read(0x8049188, 1)
+    uc.mem_write(0x8049188, chr((byte_value[0]+1) & 0xFF))
+
 
 class UnicornTracerTest(unittest.TestCase):
     
     def setUp(self):
+        binary_path = os.path.join(os.getcwd(), "tests", "ch20.bin")
+
         self.mu = TracedUc(UC_ARCH_X86, UC_MODE_32)
         self.mu.add_changes_handler(on_changes_detected)
-        
-        self.mu.reg_write(UC_X86_REG_ESP, 0xfffdd000 + 0x21000 - 1)
-        self.mu.hook_add(UC_HOOK_INTR, hook_intr)
-        
-    def test_basic(self):
-        self.mu.mem_map(0x8048000, 0x1000, trace=True, continuous_tracing=True)
+
+        self.mu.mem_map(0x8048000,  0x1000)
         self.mu.mem_map(0x8049000, 0x1000, trace=True, continuous_tracing=True)
         self.mu.mem_map(0xf7ff9000, 0x3000)
         self.mu.mem_map(0xf7ffc000, 0x2000)
-        self.mu.mem_map(0xfffdd000, 0x21000) #mem_region = 
-        #mem_region.add_code_checkpoint(0x8048115)
-        
-        self.mu.mem_write(BASE_ADDR, read("e:/workspaces/python/unicorn_tracer/tests/ch20.bin"))
+        self.mu.mem_map(0xfffdd000, 0x21000)
+
+        self.mu.mem_write(BASE_ADDR, read(binary_path))
+        self.mu.reg_write(UC_X86_REG_ESP, 0xfffdd000 + 0x21000 - 1)
+
+        self.mu.hook_add(UC_HOOK_CODE, hook_code)
+        self.mu.hook_add(UC_HOOK_INTR, hook_intr)
+
+    def test_basic(self):
         self.mu.emu_start(TEXT_ADDR, TEXT_ADDR + 0x1000)
-        
-        
-        
+
+
+

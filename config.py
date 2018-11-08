@@ -1,3 +1,0 @@
-
-class CONFIG:
-    DEBUG = True
