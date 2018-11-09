@@ -1,3 +1,6 @@
+build/
+dist/
+unicorn_tracer.egg-info/
 .project
 .pydevproject
 pycache/

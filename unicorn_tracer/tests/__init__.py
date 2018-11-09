@@ -76,6 +76,9 @@ def hook_code(uc, address, size, user_data):
     byte_value = uc.mem_read(0x8049188, 1)
     uc.mem_write(0x8049188, chr((byte_value[0]+1) & 0xFF))
 
+    byte_value = uc.mem_read(0x8049188+0x10, 1)
+    uc.mem_write(0x8049188+0x10, chr((byte_value[0] + 1) & 0xFF))
+
 
 class UnicornTracerTest(unittest.TestCase):
     
