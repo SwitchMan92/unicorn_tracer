@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
                 name='unicorn_tracer',
-                version='1.0',
+                version='1.0.1',
                 description='memory modifications tracing tool for the unicorn cpu emulator',
                 author='Tom Langfeldt',
                 url='https://github.com/SwitchMan92/unicorn_tracer',
