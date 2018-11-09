@@ -9,6 +9,20 @@ License
 This project is released under the [GPL license](COPYING).
 
 
+Installation
+------------------
+
+```
+pip install unicorn_tracer
+```
+
+Alternative method:
+```
+git clone https://github.com/SwitchMan92/unicorn_tracer.git
+python setup.py install
+```
+
+
 Usage
 ------------------
 
