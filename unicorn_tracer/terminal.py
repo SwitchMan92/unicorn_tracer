@@ -82,19 +82,20 @@ class UnicornTracerTerminal():
                 
                 if i in diff.keys():
                     logger_output += colored(self.format_char(diff[i]), "yellow") + " "
-                    current_key_index = diff.keys().index(i)
+                    current_key_index = current_key_index+1
                 else:
                     try:
                         logger_output += colored(self.format_char(memory_image1.get_memory_image()[i]) + " ", "grey")
                     except:
                         break
-            
+
+            """
             if len(diff.keys()) > (current_key_index+1):
                 current_key_index += 1
-           
+            """
+
             logger_output += colored("\t at code address {}".format(hex(memory_image2.get_code_address())) + "\n", "grey")
-        
-            current_key_index += 1
+            #current_key_index += 1
         
         logger_output += "\n"
         
