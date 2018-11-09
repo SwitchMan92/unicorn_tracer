@@ -12,6 +12,7 @@ setuptools.setup(
                 author='Tom Langfeldt',
                 url='https://github.com/SwitchMan92/unicorn_tracer',
                 packages=setuptools.find_packages(),
+                install_requires=['termcolor', 'unicorn'],
                 classifiers=[
                     "Programming Language :: Python :: 2.7",
                     "License :: OSI Approved :: GNU General Public License (GPL)",
