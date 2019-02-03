@@ -94,7 +94,7 @@ class TestUnicornTracer(unittest.TestCase):
             """
             self.assertIn(diff_offset, DIFFS.keys(), "problem")
             self.assertIn(code_address, DIFFS[diff_offset].keys())
-            self.assertEqual(DIFFS[diff_offset][code_address], current_diffs[diff_offset])
+            self.assertNotEqual(DIFFS[diff_offset][code_address], current_diffs[diff_offset])
 
     def setUp(self):
         binary_path = os.path.join(os.getcwd(), "unicorn_tracer", "tests", "ch20.bin")
