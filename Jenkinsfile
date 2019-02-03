@@ -1,5 +1,5 @@
 pipeline {
-    agent { docker { image 'unicorn_tracer' } }
+    agent { dockerfile true }
     stages {
         stage('Checkout repository') {
             steps {
@@ -7,4 +7,4 @@ pipeline {
             }
         }
     }
-}
+ }
