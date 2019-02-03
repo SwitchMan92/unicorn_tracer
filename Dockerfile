@@ -8,4 +8,4 @@ COPY ./requirements.txt /var/
 RUN pip install -r /var/requirements.txt
 COPY . /var/unicorn_tracer
 WORKDIR /var/unicorn_tracer
-CMD ["python", "-m", "unittest", "discover"]
+ENTRYPOINT ["python", "-m", "unittest", "discover"]

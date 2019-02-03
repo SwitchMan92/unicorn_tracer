@@ -1,10 +1,10 @@
-pipeline {
-    agent { dockerfile true }
-    stages {
-        stage('Checkout repository') {
-            steps {
-                checkout scm
-            }
-        }
+node {
+    checkout scm
+
+    def customImage = docker.build("unicorn_tracer")
+
+    customImage.inside {
+        sh 'cd /var/unicorn_tracer'
+        sh 'python -m unittest discover'
     }
- }
+}
